@@ -237,3 +237,10 @@ def _a_coor_to_num(coor):
 	if x > 8:
 		x = x - 1
 	return (x, y)
+
+def _num_to_a_coor(num):
+	x = num[0]
+	y = num[1]
+	if x > 7:
+		x = x + 1
+	return chr(x + 65) + str(19 - y)

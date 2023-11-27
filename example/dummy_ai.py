@@ -13,37 +13,52 @@ import random
 
 OPPONENT_COLOR = "W"
 COLOR = "B"
+NULL_POINT = -9
 
 def check_in_the_board(point):
 	if point[0] >= 0 and point[0] <= 18 and point[1] >= 0 and point[1] <= 18:
 		return True
 	else:
 		return False
-	
 
-def find_connected_stones(point):
+def make_random_move():
+	while True:
+		x = random.randint(0, 18)
+		y = random.randint(0, 18)
+
+		if connsix.get_stone_at_num((x, y)) == 'E':
+			return (x, y)
+
+
+
+def find_con_4stone(point):
 	directions = [[(0, 1), (0, -1)], [(1, 0), (-1, 0)], [(1, 1), (-1, -1)], [(1, -1), (-1, 1)]]
 
 	for direction in directions:
 		count = 1
 		both_ends = [point, point]
+
 		for i in range(2):
 			mul = 1
 			while True:
 				x = point[0] + direction[i][0] * mul
 				y = point[1] + direction[i][1] * mul
 
+				both_ends[i] = (x, y)
+				
 				if check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == OPPONENT_COLOR:
 					count += 1
 					mul += 1
-					both_ends[i] = (x, y)
-				else:
+
+				else:	
 					break
 		
 		if count >= 4:
 			print(f'count: {count}, both_ends: {both_ends}')
+			return both_ends
+	
+	return [(NULL_POINT, NULL_POINT), (NULL_POINT, NULL_POINT)]
 
-	# pass
 
 
 
@@ -55,13 +70,26 @@ def make_move(pro_move):
 	
 	provious_move2 = connsix._a_coor_to_num(provious_moves[1])
 	
-	find_connected_stones(provious_move1)
-	find_connected_stones(provious_move2)
-
+	next_move = find_con_4stone(provious_move1)
+	if next_move[0][0] != NULL_POINT:	# if there is a con 4 or 5 stone
+		if not (check_in_the_board((next_move[0][0], next_move[0][1])) and connsix.get_stone_at_num((next_move[0][0], next_move[0][1])) == 'E'):
+			next_move[0] = make_random_move()
+		if not (check_in_the_board((next_move[1][0], next_move[1][1])) and connsix.get_stone_at_num((next_move[1][0], next_move[1][1])) == 'E'):
+			next_move[1] = make_random_move()
+		
+		return connsix._num_to_a_coor(next_move[0]) + ":" + connsix._num_to_a_coor(next_move[1])
 	
-	# next_move = find_connected_stones(provious_move1, provious_move2)
+	next_move = find_con_4stone(provious_move2)
+	if next_move[0][0] != NULL_POINT:  # if there is a con 4 or 5 stone
+		if not (check_in_the_board((next_move[0][0], next_move[0][1])) and connsix.get_stone_at_num((next_move[0][0], next_move[0][1])) == 'E'):
+			next_move[0] = make_random_move()
+		if not (check_in_the_board((next_move[1][0], next_move[1][1])) and connsix.get_stone_at_num((next_move[1][0], next_move[1][1])) == 'E'):
+			next_move[1] = make_random_move()
+		
+		return connsix._num_to_a_coor(next_move[0]) + ":" + connsix._num_to_a_coor(next_move[1])
 
-	return chr(random.randint(65, 84)) + str(random.randint(1, 19)) + ":" + chr(random.randint(65, 84)) + str(random.randint(1, 19))
+
+	return connsix._num_to_a_coor(make_random_move()) + ":" + connsix._num_to_a_coor(make_random_move())
 
 def main():
 	# ip = input("input ip: ")
