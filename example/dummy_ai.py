@@ -7,7 +7,7 @@
 
 '''
 import sys
-sys.path.append("../CONNSIX")
+sys.path.append('../') # add the path to the package CONNSIX
 from CONNSIX import connsix
 import random 
 
@@ -97,7 +97,7 @@ def main():
 	# port = int(input("input port number: "))
 	port = 9190
 	# dummy_home = input("input BLACK or WHITE: ")
-	dummy_home = "BLACK"
+	dummy_home = "WHITE"
 
 	global COLOR
 	global OPPONENT_COLOR
@@ -119,6 +119,8 @@ def main():
 		print("Received first away move from server: " + away_move)
 	else:
 		away_move = connsix.draw_and_read("")
+		print("Received first away move from server: " + away_move)
+		away_move = connsix.draw_and_read("K11:L11")
 		print("Received first away move from server: " + away_move)
 	
 	pro_move = away_move
