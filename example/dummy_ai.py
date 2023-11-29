@@ -7,19 +7,24 @@
 
 '''
 import sys
-sys.path.append('../') # add the path to the package CONNSIX
+sys.path.append("..")
+sys.path.append("../CONNSIX")
 from CONNSIX import connsix
-import random 
+import random
+import time
 
 OPPONENT_COLOR = "W"
 COLOR = "B"
 NULL_POINT = -9
+SCORES = [[0 for i in range(19)] for j in range(19)]
+
 
 def check_in_the_board(point):
 	if point[0] >= 0 and point[0] <= 18 and point[1] >= 0 and point[1] <= 18:
 		return True
 	else:
 		return False
+
 
 def make_random_move():
 	while True:
@@ -54,42 +59,102 @@ def find_con_4stone(point):
 					break
 		
 		if count >= 4:
-			print(f'count: {count}, both_ends: {both_ends}')
-			return both_ends
-	
-	return [(NULL_POINT, NULL_POINT), (NULL_POINT, NULL_POINT)]
+			for end in both_ends:
+				if check_in_the_board(end) and connsix.get_stone_at_num(end) == 'E':
+					SCORES[end[0]][end[1]] = 1e6
 
+
+
+def calculate_score_for_position(x, y):
+	if not check_in_the_board((x, y)) or connsix.get_stone_at_num((x, y)) != 'E':
+		return -1
+
+	score = 0
+	directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+
+	for dx, dy in directions:
+		count = 1
+		for mul in [1, -1]:
+			for i in range(1, 6):
+				nx, ny = x + dx * i * mul, y + dy * i * mul
+				if check_in_the_board((nx, ny)) and connsix.get_stone_at_num((nx, ny)) == COLOR:
+					count += 1
+				else:
+					break
+        
+		if count >= 5:
+			score += 1e5
+		elif count >= 4:
+			score += 1e4
+		elif count >= 3:
+			score += 1e3
+		elif count >= 2:
+			score += 1e2
+
+	return score
+
+
+
+def update_scores(pro_move):
+
+	for x in range(19):
+		for y in range(19):
+			SCORES[y][x] = calculate_score_for_position(x, y)
+
+	# opponent's 4 stone --> high scores
+	provious_moves = pro_move.split(":")
+	for move in provious_moves:
+		coor = connsix._a_coor_to_num(move)
+		if coor != "BADINPUT":
+			find_con_4stone(coor)
+
+	# SCORES check
+	for x in range(19):
+		for y in range(19):
+			print(SCORES[x][y], end = '\t')
+		print()
+	print()
+
+
+
+def find_best_move():
+    max_score = -1
+    best_move = (NULL_POINT, NULL_POINT)
+    for x in range(19):
+        for y in range(19):
+            if SCORES[x][y] > max_score and connsix.get_stone_at_num((x, y)) == 'E':
+                max_score = SCORES[x][y]
+                best_move = (x, y)
+    return best_move
 
 
 
 def make_move(pro_move):
-	provious_moves = pro_move.split(":")
-	provious_move1 = connsix._a_coor_to_num(provious_moves[0])
-	if provious_move1 == "BADINPUT":
-		exit()
-	
-	provious_move2 = connsix._a_coor_to_num(provious_moves[1])
-	
-	next_move = find_con_4stone(provious_move1)
-	if next_move[0][0] != NULL_POINT:	# if there is a con 4 or 5 stone
-		if not (check_in_the_board((next_move[0][0], next_move[0][1])) and connsix.get_stone_at_num((next_move[0][0], next_move[0][1])) == 'E'):
-			next_move[0] = make_random_move()
-		if not (check_in_the_board((next_move[1][0], next_move[1][1])) and connsix.get_stone_at_num((next_move[1][0], next_move[1][1])) == 'E'):
-			next_move[1] = make_random_move()
-		
-		return connsix._num_to_a_coor(next_move[0]) + ":" + connsix._num_to_a_coor(next_move[1])
-	
-	next_move = find_con_4stone(provious_move2)
-	if next_move[0][0] != NULL_POINT:  # if there is a con 4 or 5 stone
-		if not (check_in_the_board((next_move[0][0], next_move[0][1])) and connsix.get_stone_at_num((next_move[0][0], next_move[0][1])) == 'E'):
-			next_move[0] = make_random_move()
-		if not (check_in_the_board((next_move[1][0], next_move[1][1])) and connsix.get_stone_at_num((next_move[1][0], next_move[1][1])) == 'E'):
-			next_move[1] = make_random_move()
-		
-		return connsix._num_to_a_coor(next_move[0]) + ":" + connsix._num_to_a_coor(next_move[1])
+
+	# scores 계산 -> 모든 방향으로 어떤 구조가 만들어지냐에 따라
+	update_scores(pro_move)
 
 
-	return connsix._num_to_a_coor(make_random_move()) + ":" + connsix._num_to_a_coor(make_random_move())
+	first_move = find_best_move()
+
+	if first_move != (NULL_POINT, NULL_POINT):
+		connsix._lcs_board[first_move[1]][first_move[0]] = 1 if COLOR == 'B' else 2
+
+		update_scores(pro_move)
+		second_move = find_best_move()
+
+		connsix._lcs_board[first_move[1]][first_move[0]] = 0
+	else:
+		second_move = (NULL_POINT, NULL_POINT)
+
+	if first_move == (NULL_POINT, NULL_POINT):
+		first_move = make_random_move()
+	if second_move == (NULL_POINT, NULL_POINT):
+		second_move = make_random_move()
+
+	return connsix._num_to_a_coor(first_move) + ":" + connsix._num_to_a_coor(second_move)
+
+
 
 def main():
 	# ip = input("input ip: ")
@@ -97,10 +162,11 @@ def main():
 	# port = int(input("input port number: "))
 	port = 9190
 	# dummy_home = input("input BLACK or WHITE: ")
-	dummy_home = "WHITE"
+	dummy_home = "BLACK"
 
 	global COLOR
 	global OPPONENT_COLOR
+	global POINTS
 
 	if dummy_home == "BLACK":
 		COLOR = "B"
@@ -121,7 +187,7 @@ def main():
 		away_move = connsix.draw_and_read("")
 		print("Received first away move from server: " + away_move)
 		away_move = connsix.draw_and_read("K11:L11")
-		print("Received first away move from server: " + away_move)
+		print("Received second away move from server: " + away_move)
 	
 	pro_move = away_move
 
@@ -129,6 +195,7 @@ def main():
 		away_move = connsix.draw_and_read(make_move(pro_move))
 		print("Received away move from server: " + away_move)
 		pro_move = away_move
+
 
 
 if __name__ == "__main__":
