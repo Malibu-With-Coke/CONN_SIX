@@ -154,7 +154,20 @@ def make_move(pro_move):
 
 	return connsix._num_to_a_coor(first_move) + ":" + connsix._num_to_a_coor(second_move)
 
+def first_move():
+	from itertools import combinations
+	first_move_list = []
+	
+	for i in ('J', 'K', 'L'):
+		for j in range(9, 12):
+			stone_place = i + str(j)
+			if stone_place != "K10" and connsix.get_stone_at(stone_place) == 'E':
+				first_move_list.append(stone_place)
+	
+	return_comb = list(combinations(first_move_list, 2))[0]
 
+
+	return return_comb[0] + ":" + return_comb[1]
 
 def main():
 	# ip = input("input ip: ")
@@ -162,7 +175,8 @@ def main():
 	# port = int(input("input port number: "))
 	port = 9190
 	# dummy_home = input("input BLACK or WHITE: ")
-	dummy_home = "BLACK"
+	# dummy_home = "BLACK"
+	dummy_home = "WHITE"
 
 	global COLOR
 	global OPPONENT_COLOR
@@ -186,7 +200,7 @@ def main():
 	else:
 		away_move = connsix.draw_and_read("")
 		print("Received first away move from server: " + away_move)
-		away_move = connsix.draw_and_read("K11:L11")
+		away_move = connsix.draw_and_read(first_move())
 		print("Received second away move from server: " + away_move)
 	
 	pro_move = away_move
