@@ -13,8 +13,8 @@ from CONNSIX import connsix
 import random
 import time
 
-OPPONENT_COLOR = "W"
-COLOR = "B"
+OPPONENT_COLOR = ""
+COLOR = ""
 NULL_POINT = -9
 SCORES = [[0 for i in range(19)] for j in range(19)]
 
@@ -61,8 +61,37 @@ def find_con_4stone(point):
 		if count >= 4:
 			for end in both_ends:
 				if check_in_the_board(end) and connsix.get_stone_at_num(end) == 'E':
-					SCORES[end[0]][end[1]] = 1e6
+					SCORES[end[0]][end[1]] = 1e4
 
+def find_sep_4stone(point):
+	directions = [[(0, 1), (0, -1)], [(1, 0), (-1, 0)], [(1, 1), (-1, -1)], [(1, -1), (-1, 1)]]
+
+	for direction in directions:
+
+		for i in range(6):
+			if not check_in_the_board((point[0] + direction[0][0] * i, point[1] + direction[0][1] * i)) \
+			and not check_in_the_board((point[0] + direction[1][0] * (5 - i), point[1] + direction[1][1] * (5 - i))):
+				continue
+			
+			count = 1
+			blank_point = (NULL_POINT, NULL_POINT)
+			blank_count = 0
+			for j in range(6):
+				x = point[0] + direction[1][0] * (5 - i) + direction[0][0] * j
+				y = point[1] + direction[1][1] * (5 - i) + direction[0][1] * j
+				if check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == 'E':
+					blank_count += 1
+				elif check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == OPPONENT_COLOR:
+					count += 1
+					continue
+				else:
+					break
+
+				if blank_count:
+					blank_point = (x, y)
+		
+			if count >= 4 and blank_count:
+				SCORES[blank_point[0]][blank_point[1]] = 1e6
 
 
 def calculate_score_for_position(x, y):
@@ -82,14 +111,16 @@ def calculate_score_for_position(x, y):
 				else:
 					break
         
-		if count >= 5:
+		if count >= 6:
 			score += 1e5
-		elif count >= 4:
-			score += 1e4
-		elif count >= 3:
+		elif count >= 5:
 			score += 1e3
-		elif count >= 2:
+		elif count >= 4:
 			score += 1e2
+		elif count >= 3:
+			score += 1e1
+		elif count >= 2:
+			score += 1e0
 
 	return score
 
@@ -99,7 +130,7 @@ def update_scores(pro_move):
 
 	for x in range(19):
 		for y in range(19):
-			SCORES[y][x] = calculate_score_for_position(x, y)
+			SCORES[x][y] = calculate_score_for_position(x, y)
 
 	# opponent's 4 stone --> high scores
 	provious_moves = pro_move.split(":")
@@ -107,6 +138,20 @@ def update_scores(pro_move):
 		coor = connsix._a_coor_to_num(move)
 		if coor != "BADINPUT":
 			find_con_4stone(coor)
+			find_sep_4stone(coor)
+
+
+
+def find_best_move():
+	max_score = -1
+	best_move = (NULL_POINT, NULL_POINT)
+
+	# board check
+	for x in range(19):
+		for y in range(19):
+			print(connsix._lcs_board[x][y], end = '\t')
+		print()
+	print()
 
 	# SCORES check
 	for x in range(19):
@@ -115,17 +160,12 @@ def update_scores(pro_move):
 		print()
 	print()
 
-
-
-def find_best_move():
-    max_score = -1
-    best_move = (NULL_POINT, NULL_POINT)
-    for x in range(19):
-        for y in range(19):
-            if SCORES[x][y] > max_score and connsix.get_stone_at_num((x, y)) == 'E':
-                max_score = SCORES[x][y]
-                best_move = (x, y)
-    return best_move
+	for x in range(19):
+		for y in range(19):
+			if SCORES[x][y] > max_score and connsix.get_stone_at_num((x, y)) == 'E':
+				max_score = SCORES[x][y]
+				best_move = (x, y)
+	return best_move
 
 
 
@@ -138,12 +178,12 @@ def make_move(pro_move):
 	first_move = find_best_move()
 
 	if first_move != (NULL_POINT, NULL_POINT):
-		connsix._lcs_board[first_move[1]][first_move[0]] = 1 if COLOR == 'B' else 2
+		connsix._lcs_board[first_move[0]][first_move[1]] = 1 if COLOR == 'B' else 2
 
 		update_scores(pro_move)
 		second_move = find_best_move()
 
-		connsix._lcs_board[first_move[1]][first_move[0]] = 0
+		connsix._lcs_board[first_move[0]][first_move[1]] = 0
 	else:
 		second_move = (NULL_POINT, NULL_POINT)
 
@@ -153,6 +193,7 @@ def make_move(pro_move):
 		second_move = make_random_move()
 
 	return connsix._num_to_a_coor(first_move) + ":" + connsix._num_to_a_coor(second_move)
+
 
 def first_move():
 	from itertools import combinations
@@ -169,14 +210,15 @@ def first_move():
 
 	return return_comb[0] + ":" + return_comb[1]
 
+
 def main():
 	# ip = input("input ip: ")
 	ip = '127.0.0.1'
 	# port = int(input("input port number: "))
 	port = 9190
 	# dummy_home = input("input BLACK or WHITE: ")
-	# dummy_home = "BLACK"
-	dummy_home = "WHITE"
+	dummy_home = "BLACK"
+	# dummy_home = "WHITE"
 
 	global COLOR
 	global OPPONENT_COLOR

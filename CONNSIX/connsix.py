@@ -91,7 +91,7 @@ def lets_connect(ip:str, port:int, color:str) -> str:
 		red_coor = data.split(':')
 		for coors in red_coor:
 			(x, y) = _a_coor_to_num(coors)
-			_lcs_board[y][x] = _red
+			_lcs_board[x][y] = _red
 	return data
 
 
@@ -157,10 +157,10 @@ def draw_and_read(user_move:str) -> str:
 					(x,y) = parsed_num
 					if x > 18 or x < 0 or y > 18 or y < 0:
 						msg = "BADCOORD$" + user_move
-					elif _lcs_board[y][x] != 0:
+					elif _lcs_board[x][y] != 0:
 						msg = "NOTEMPYT$" + user_move
 					else:
-						_lcs_board[y][x] = _home
+						_lcs_board[x][y] = _home
 	if len(msg):
 		_conn.sendall((len(msg)).to_bytes(4, byteorder='little') + str.encode(msg))
 
@@ -174,7 +174,7 @@ def draw_and_read(user_move:str) -> str:
 		away_coor = away_move.split(':')
 		for coors in away_coor:
 			(x, y) = _a_coor_to_num(coors)
-			_lcs_board[y][x] = _away
+			_lcs_board[x][y] = _away
 	return away_move
 
 
@@ -204,13 +204,13 @@ def get_stone_at(position:str) -> chr:
 	(x,y) = result
 	if x > 18 or x < 0 or y > 18 or y < 0:
 		return 'N'
-	if _lcs_board[y][x] == 0:
+	if _lcs_board[x][y] == 0:
 		return 'E'
-	elif _lcs_board[y][x] == 1:
+	elif _lcs_board[x][y] == 1:
 		return 'B'
-	elif _lcs_board[y][x] == 2: 
+	elif _lcs_board[x][y] == 2: 
 		return 'W'
-	elif _lcs_board[y][x] == 3:
+	elif _lcs_board[x][y] == 3:
 		return 'R'
 	raise ApiError("query() failed, please contact maintainance team: " + position)
 
@@ -218,29 +218,28 @@ def get_stone_at_num(position:tuple) -> chr:
 	(x,y) = position
 	if x > 18 or x < 0 or y > 18 or y < 0:
 		return 'N'
-	if _lcs_board[y][x] == 0:
+	if _lcs_board[x][y] == 0:
 		return 'E'
-	elif _lcs_board[y][x] == 1:
+	elif _lcs_board[x][y] == 1:
 		return 'B'
-	elif _lcs_board[y][x] == 2: 
+	elif _lcs_board[x][y] == 2: 
 		return 'W'
-	elif _lcs_board[y][x] == 3:
+	elif _lcs_board[x][y] == 3:
 		return 'R'
 	raise ApiError("query() failed, please contact maintainance team: " + position)
-
 
 def _a_coor_to_num(coor): 
 	if not coor[0].isalpha() or not coor[1:].isnumeric() or coor[0] == 'I':
 		return "BADINPUT" 
-	x = ord(coor[0]) - 65 
-	y = 19 - int(coor[1:])
-	if x > 8:
-		x = x - 1
+	x = 19 - int(coor[1:])
+	y = ord(coor[0]) - 65
+	if y > 8:
+		y = y - 1
 	return (x, y)
 
 def _num_to_a_coor(num):
 	x = num[0]
 	y = num[1]
-	if x > 7:
-		x = x + 1
-	return chr(x + 65) + str(19 - y)
+	if y > 7:
+		y = y + 1
+	return chr(y + 65) + str(19 - x)
