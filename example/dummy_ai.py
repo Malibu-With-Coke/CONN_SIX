@@ -18,7 +18,7 @@ COLOR = ""
 NULL_POINT = -9
 SCORES = [[0 for i in range(19)] for j in range(19)]
 
-
+# if opponent's move is in the board, return True
 def check_in_the_board(point):
 	if point[0] >= 0 and point[0] <= 18 and point[1] >= 0 and point[1] <= 18:
 		return True
@@ -93,36 +93,225 @@ def find_sep_4stone(point):
 			if count >= 4 and blank_count:
 				SCORES[blank_point[0]][blank_point[1]] = 1e6
 
+def invalid_area_for_find_sep_4stone(point1, point2):
+	if not check_in_the_board(point1) or not check_in_the_board(point2):
+		return True
+	
+	if connsix.get_stone_at_num(point1) != OPPONENT_COLOR or connsix.get_stone_at_num(point2) != OPPONENT_COLOR: 
+		return True
+	
+	return False
+	
+def find_sep_4stone_scenario(point):
+	directions = [[(0, 1), (0, -1)], [(1, 0), (-1, 0)], [(1, 1), (-1, -1)], [(1, -1), (-1, 1)]]
 
-def calculate_score_for_position(x, y):
-	if not check_in_the_board((x, y)) or connsix.get_stone_at_num((x, y)) != 'E':
-		return -1
+	# CASE1: BLANK * 1 + OPPONENT * 4
+	for direction in directions:
+		positive_direction = direction[0]
+		negative_direction = direction[1]
 
-	score = 0
-	directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+		for i in range(5):
+			if invalid_area_for_find_sep_4stone((point[0] + negative_direction[0] * (4 - i), point[1] + negative_direction[1] * (4 - i)), \
+			(point[0] + positive_direction[0] * i, point[1] + positive_direction[1] * i)):
+				continue
 
-	for dx, dy in directions:
-		count = 1
-		for mul in [1, -1]:
-			for i in range(1, 6):
-				nx, ny = x + dx * i * mul, y + dy * i * mul
-				if check_in_the_board((nx, ny)) and connsix.get_stone_at_num((nx, ny)) == COLOR:
-					count += 1
+			opponent_count = 0
+			blank_count = 0
+			blank_point = (NULL_POINT, NULL_POINT)
+			for j in range(5):
+				x = point[0] + negative_direction[0] * (4 - i) + positive_direction[0] * j
+				y = point[1] + negative_direction[1] * (4 - i) + positive_direction[1] * j
+				if check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == 'E':
+					blank_count += 1
+					blank_point = (x, y)
+				elif check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == OPPONENT_COLOR:
+					opponent_count += 1
 				else:
 					break
-        
-		if count >= 6:
-			score += 1e5
-		elif count >= 5:
-			score += 1e3
-		elif count >= 4:
-			score += 1e2
-		elif count >= 3:
-			score += 1e1
-		elif count >= 2:
-			score += 1e0
 
-	return score
+			if opponent_count == 4 and blank_count == 1:
+				print(blank_point)
+				SCORES[blank_point[0]][blank_point[1]] = 1e6
+
+	# CASE2: BLANK * 1 + OPPONENT * 4
+	# 의미가 있는지는 모르겠다...
+	for direction in directions:
+		positive_direction = direction[0]
+		negative_direction = direction[1]
+
+		for i in range(6):
+			if invalid_area_for_find_sep_4stone((point[0] + negative_direction[0] * (5 - i), point[1] + negative_direction[1] * (5 - i)), \
+			(point[0] + positive_direction[0] * i, point[1] + positive_direction[1] * i)):
+				continue
+
+			opponent_count = 0
+			blank_count = 0
+			blank_point = (NULL_POINT, NULL_POINT)
+			for j in range(6):
+				x = point[0] + negative_direction[0] * (5 - i) + positive_direction[0] * j
+				y = point[1] + negative_direction[1] * (5 - i) + positive_direction[1] * j
+				if check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == 'E':
+					blank_count += 1
+					blank_point = (x, y)
+				elif check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == OPPONENT_COLOR:
+					opponent_count += 1
+				else:
+					break
+
+			if opponent_count == 5 and blank_count == 1:
+				print(blank_point)
+				SCORES[blank_point[0]][blank_point[1]] = 1e6
+
+	# CASE3: BLANK * 2 + OPPONENT * 4
+	for direction in directions:
+		positive_direction = direction[0]
+		negative_direction = direction[1]
+
+		for i in range(6):
+			if invalid_area_for_find_sep_4stone((point[0] + negative_direction[0] * (5 - i), point[1] + negative_direction[1] * (5 - i)), \
+			(point[0] + positive_direction[0] * i, point[1] + positive_direction[1] * i)):
+				continue
+
+			opponent_count = 0
+			blank_count = 0
+			order = []
+			blank_point = []
+			for j in range(6):
+				x = point[0] + negative_direction[0] * (5 - i) + positive_direction[0] * j
+				y = point[1] + negative_direction[1] * (5 - i) + positive_direction[1] * j
+				if check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == 'E':
+					blank_count += 1
+					blank_point.append((x, y))
+					order.append(0)
+				elif check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == OPPONENT_COLOR:
+					opponent_count += 1
+					order.append(1)
+				else:
+					break
+
+			if opponent_count == 4 and blank_count == 2:
+				if order == [1, 0, 0, 1, 1, 1]:
+					print(blank_point[0])
+					SCORES[blank_point[0][0]][blank_point[0][1]] = 1e6
+				elif order == [1, 0, 1, 0, 1, 1]:
+					print(blank_point[1])
+					SCORES[blank_point[1][0]][blank_point[1][1]] = 1e6
+				elif order == [1, 0, 1, 1, 0, 1]:
+					print(blank_point[2])
+					SCORES[blank_point[2][0]][blank_point[2][1]] = 1e6
+				elif order == [1, 1, 0, 0, 1, 1]:
+					print(blank_point[3])
+					SCORES[blank_point[3][0]][blank_point[3][1]] = 1e6
+				elif order == [1, 1, 0, 1, 0, 1]:
+					print(blank_point[4])
+					SCORES[blank_point[4][0]][blank_point[4][1]] = 1e6
+				elif order == [1, 1, 1, 0, 0, 1]:
+					print(blank_point[5])
+					SCORES[blank_point[5][0]][blank_point[5][1]] = 1e6
+				print(blank_point)
+				SCORES[blank_point[0]][blank_point[1]] = 1e6
+
+	# CASE4: BLANK * 2 + OPPONENT * 5
+	for direction in directions:
+		positive_direction = direction[0]
+		negative_direction = direction[1]
+
+		for i in range(7):
+			if invalid_area_for_find_sep_4stone((point[0] + negative_direction[0] * (6 - i), point[1] + negative_direction[1] * (6 - i)), \
+			(point[0] + positive_direction[0] * i, point[1] + positive_direction[1] * i)):
+				continue
+
+			opponent_count = 0
+			blank_count = 0
+			order = []
+			blank_point = []
+			for j in range(5):
+				x = point[0] + negative_direction[0] * (6 - i) + positive_direction[0] * j
+				y = point[1] + negative_direction[1] * (6 - i) + positive_direction[1] * j
+				if check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == 'E':
+					blank_count += 1
+					blank_point.append((x, y))
+					order.append(0)
+				elif check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == OPPONENT_COLOR:
+					opponent_count += 1
+					order.append(1)
+				else:
+					break
+
+			if opponent_count == 5 and blank_count == 2:
+				if order == [1, 0, 0, 1, 1, 1, 1]: # 1
+					print(blank_point[0])
+					SCORES[blank_point[0][0]][blank_point[0][1]] = 1e6
+				elif order == [1, 0, 1, 0, 1, 1, 1]: # 2
+					print(blank_point[1])
+					SCORES[blank_point[1][0]][blank_point[1][1]] = 1e6
+				elif order == [1, 0, 1, 1, 0, 1, 1]: # 3
+					print(blank_point[2])
+					SCORES[blank_point[2][0]][blank_point[2][1]] = 1e6
+				elif order == [1, 0, 1, 1, 1, 0, 1]: # 4
+					print(blank_point[3])
+					SCORES[blank_point[3][0]][blank_point[3][1]] = 1e6
+				elif order == [1, 1, 0, 0, 1, 1, 1]: # 5
+					print(blank_point[4])
+					SCORES[blank_point[4][0]][blank_point[4][1]] = 1e6
+				elif order == [1, 1, 0, 1, 0, 1, 1]: # 6
+					print(blank_point[5])
+					SCORES[blank_point[5][0]][blank_point[5][1]] = 1e6
+				elif order == [1, 1, 0, 1, 1, 0, 1]: # 7
+					print(blank_point[6])
+					SCORES[blank_point[6][0]][blank_point[6][1]] = 1e6
+				elif order == [1, 1, 1, 0, 0, 1, 1]: # 8
+					print(blank_point[7])
+					SCORES[blank_point[7][0]][blank_point[7][1]] = 1e6
+				elif order == [1, 1, 1, 0, 1, 0, 1]: # 9
+					print(blank_point[8])
+					SCORES[blank_point[8][0]][blank_point[8][1]] = 1e6
+				elif order == [1, 1, 1, 1, 0, 0, 1]: # 10
+					print(blank_point[9])
+					SCORES[blank_point[9][0]][blank_point[9][1]] = 1e6
+				
+
+def calculate_score_for_position(x, y):
+   if not check_in_the_board((x, y)) or connsix.get_stone_at_num((x, y)) != 'E':
+      return -1
+
+   score = 0
+   directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+
+   for dx, dy in directions:
+      stones = []
+
+      for i in range(1, 6):
+         nx, ny = x - dx * i, y - dy * i
+         if check_in_the_board((nx, ny)):
+            stones.insert(0, connsix.get_stone_at_num((nx, ny)))
+         else:
+            stones.insert(0, None)
+
+      stones.append(COLOR)
+
+      for i in range(1, 6):
+         nx, ny = x + dx * i, y + dy * i
+         if check_in_the_board((nx, ny)):
+            stones.append(connsix.get_stone_at_num((nx, ny)))
+         else:
+            stones.append(None)
+
+      # pattern check
+      for i in range(len(stones)-5):
+         pattern6 = stones[i: i+6]
+         if pattern6.count(COLOR) == 6:
+            score += 1e5
+         elif pattern6.count(COLOR) == 5 and pattern6.count('E') == 1:
+            score += 1e4
+         elif pattern6.count(COLOR) == 4 and pattern6.count('E') == 2:
+            score += 1e2
+         elif pattern6.count(COLOR) == 3 and pattern6.count('E') == 3:
+            score += 1e1
+         elif pattern6.count(COLOR) == 2 and pattern6.count('E') == 4:
+            score += 1e0
+
+   return score
 
 
 
@@ -138,7 +327,8 @@ def update_scores(pro_move):
 		coor = connsix._a_coor_to_num(move)
 		if coor != "BADINPUT":
 			find_con_4stone(coor)
-			find_sep_4stone(coor)
+			# find_sep_4stone(coor)
+			find_sep_4stone_scenario(coor)
 
 
 
@@ -147,18 +337,18 @@ def find_best_move():
 	best_move = (NULL_POINT, NULL_POINT)
 
 	# board check
-	for x in range(19):
-		for y in range(19):
-			print(connsix._lcs_board[x][y], end = '\t')
-		print()
-	print()
+	# for x in range(19):
+	# 	for y in range(19):
+	# 		print(connsix._lcs_board[x][y], end = '\t')
+	# 	print()
+	# print()
 
-	# SCORES check
-	for x in range(19):
-		for y in range(19):
-			print(SCORES[x][y], end = '\t')
-		print()
-	print()
+	# # SCORES check
+	# for x in range(19):
+	# 	for y in range(19):
+	# 		print(SCORES[x][y], end = '\t')
+	# 	print()
+	# print()
 
 	for x in range(19):
 		for y in range(19):
