@@ -208,8 +208,8 @@ def find_sep_4stone_scenario(point):
 				elif order == [1, 1, 1, 0, 0, 1]:
 					print(blank_point[5])
 					SCORES[blank_point[5][0]][blank_point[5][1]] = 1e6
-				print(blank_point)
-				SCORES[blank_point[0]][blank_point[1]] = 1e6
+				# print(blank_point)
+				# SCORES[blank_point[0]][blank_point[1]] = 1e6
 
 	# CASE4: BLANK * 2 + OPPONENT * 5
 	for direction in directions:
@@ -225,7 +225,7 @@ def find_sep_4stone_scenario(point):
 			blank_count = 0
 			order = []
 			blank_point = []
-			for j in range(5):
+			for j in range(7):
 				x = point[0] + negative_direction[0] * (6 - i) + positive_direction[0] * j
 				y = point[1] + negative_direction[1] * (6 - i) + positive_direction[1] * j
 				if check_in_the_board((x, y)) and connsix.get_stone_at_num((x, y)) == 'E':
@@ -239,9 +239,14 @@ def find_sep_4stone_scenario(point):
 					break
 
 			if opponent_count == 5 and blank_count == 2:
+				print(order)
 				if order == [1, 0, 0, 1, 1, 1, 1]: # 1
 					print(blank_point[0])
-					SCORES[blank_point[0][0]][blank_point[0][1]] = 1e6
+					SCORES[blank_point[0][0]][blank_point[0][1]] = 0
+					SCORES[blank_point[1][0]][blank_point[1][1]] = 1e6
+					
+					print(SCORES[blank_point[0][0]][blank_point[0][1]])
+					print(SCORES[blank_point[1][0]][blank_point[1][1]])
 				elif order == [1, 0, 1, 0, 1, 1, 1]: # 2
 					print(blank_point[1])
 					SCORES[blank_point[1][0]][blank_point[1][1]] = 1e6
@@ -313,6 +318,14 @@ def calculate_score_for_position(x, y):
 
    return score
 
+def count_threats():
+	count_of_threats = 0
+	for x in range(19):
+		for y in range(19):
+			if SCORES[x][y] == 1e6:
+				count_of_threats += 1
+	
+	return count_of_threats
 
 
 def update_scores(pro_move):
@@ -327,8 +340,9 @@ def update_scores(pro_move):
 		coor = connsix._a_coor_to_num(move)
 		if coor != "BADINPUT":
 			find_con_4stone(coor)
-			# find_sep_4stone(coor)
-			find_sep_4stone_scenario(coor)
+			if count_threats() < 2:
+				# find_sep_4stone(coor)
+				find_sep_4stone_scenario(coor)
 
 
 
